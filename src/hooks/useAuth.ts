@@ -4,7 +4,7 @@
 import { useSession } from 'next-auth/react';
 
 /**
- * Client-side authentication hook
+ * Enhanced authentication hook with admin detection
  */
 export function useAuth() {
   const { data: session, status } = useSession();

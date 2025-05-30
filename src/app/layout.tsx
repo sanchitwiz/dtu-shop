@@ -2,6 +2,7 @@
 import { Inter } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
+import AdminFloatingButton from '@/components/admin/AdminFloatingButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           {children}
+          <AdminFloatingButton />
         </Providers>
       </body>
     </html>

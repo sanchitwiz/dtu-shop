@@ -6,9 +6,11 @@ import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Settings, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Dashboard() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,11 +29,6 @@ export default function Dashboard() {
         <Card>
           <CardContent className="pt-6">
             <p>Please sign in to access the dashboard.</p>
-            <Button 
-              className="mt-4" 
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })} >
-              Sign In
-              </Button>
           </CardContent>
         </Card>
       </div>
@@ -41,9 +38,21 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-gray-600">Welcome to your college marketplace</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="mt-2 text-gray-600">Welcome to your college marketplace</p>
+          </div>
+          
+          {/* Admin Panel Access Button - Only visible to admins */}
+          {isAdmin && (
+            <Link href="/admin">
+              <Button className="bg-red-600 hover:bg-red-700 text-white">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Admin Panel
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -67,6 +76,11 @@ export default function Dashboard() {
                   <Badge variant={user.role === 'admin' ? 'destructive' : 'default'}>
                     {user.role}
                   </Badge>
+                  {isAdmin && (
+                    <Badge variant="outline" className="ml-2">
+                      Administrator
+                    </Badge>
+                  )}
                 </div>
               </div>
               {user.collegeId && (
@@ -97,6 +111,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button className="w-full" variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
                 Edit Profile
               </Button>
               <Button className="w-full" variant="outline">
@@ -105,6 +120,32 @@ export default function Dashboard() {
               <Button className="w-full" variant="outline">
                 Browse Products
               </Button>
+              
+              {/* Additional Admin Quick Actions */}
+              {isAdmin && (
+                <>
+                  <hr className="my-4" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Admin Actions</p>
+                    <Link href="/admin/users" className="block">
+                      <Button className="w-full" variant="outline">
+                        Manage Users
+                      </Button>
+                    </Link>
+                    <Link href="/admin/products" className="block">
+                      <Button className="w-full" variant="outline">
+                        Manage Products
+                      </Button>
+                    </Link>
+                    <Link href="/admin/orders" className="block">
+                      <Button className="w-full" variant="outline">
+                        View All Orders
+                      </Button>
+                    </Link>
+                  </div>
+                </>
+              )}
+              
               <Button 
                 className="w-full" 
                 variant="destructive"
@@ -115,6 +156,44 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Admin Statistics Card - Only visible to admins */}
+        {isAdmin && (
+          <div className="mt-6">
+            <Card className="border-red-200 bg-red-50">
+              <CardHeader>
+                <CardTitle className="text-red-800">Administrator Dashboard</CardTitle>
+                <CardDescription className="text-red-600">
+                  You have administrative privileges
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-800">150</p>
+                    <p className="text-sm text-red-600">Total Users</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-800">45</p>
+                    <p className="text-sm text-red-600">Products</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-800">89</p>
+                    <p className="text-sm text-red-600">Orders</p>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <Link href="/admin">
+                    <Button className="bg-red-600 hover:bg-red-700">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Go to Admin Panel
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

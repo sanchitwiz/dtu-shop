@@ -17,7 +17,11 @@ export interface IUser extends Document {
 
 
 
-
+  lastLogin?: Date;
+  // emailVerified?: boolean;
+  adminPermissions?: string[]; // For granular admin permissions
+  // createdBy?: string; // Track who created the user (for admin-created accounts)
+  // notes?: string; // Admin notes about the user
 
 
 
@@ -87,7 +91,15 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: true
   },
-
+  adminPermissions: {
+    type: [String],
+    enum: ['users', 'products', 'orders', 'categories', 'analytics', 'settings'],
+    default: []
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
 
 
 
