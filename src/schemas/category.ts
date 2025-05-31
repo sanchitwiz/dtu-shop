@@ -7,13 +7,9 @@ export const categoryCreateSchema = z.object({
     .min(1, 'Category name is required')
     .max(50, 'Category name cannot exceed 50 characters')
     .trim(),
-//   description: z
-//     .string()
-//     .max(200, 'Description cannot exceed 200 characters')
-//     .optional(),
-  image: z.string().url('Please provide a valid image URL').optional(),
-  isActive: z.boolean().default(true),
-  sortOrder: z.number().int().min(0).default(0),
+  image: z.string().url('Please provide a valid image URL').optional(), // Keep this optional
+  isActive: z.boolean(), // Remove .default(true) and .optional()
+  sortOrder: z.number().int().min(0), // Remove .default(0) and .optional()
 });
 
 export const categoryUpdateSchema = categoryCreateSchema.partial();

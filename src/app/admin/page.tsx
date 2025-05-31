@@ -2,34 +2,93 @@
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { requireAdmin } from '@/lib/auth/adminAuth';
-import { Users, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import dbConnect from '@/lib/dbConnect';
+import User from '@/models/User';
+import Product from '@/models/Product';
+import Order from '@/models/Order';
+import Category from '@/models/Category';
+import { Users, Package, ShoppingCart, TrendingUp, Plus, Eye, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function AdminDashboard() {
   const admin = await requireAdmin();
+  await dbConnect();
 
-  // Mock data - replace with real database queries
+  // Fetch real data from database
+  const [
+    totalUsers,
+    totalProducts,
+    totalOrders,
+    totalCategories,
+    activeProducts,
+    inactiveUsers,
+    lowStockProducts,
+    recentOrders,
+    recentUsers
+  ] = await Promise.all([
+    User.countDocuments(),
+    Product.countDocuments(),
+    Order.countDocuments(),
+    Category.countDocuments(),
+    Product.countDocuments({ isActive: true }),
+    User.countDocuments({ isActive: false }),
+    Product.countDocuments({ quantity: { $lte: 5 } }),
+    Order.find({})
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean(),
+    User.find({ role: 'student' })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+  ]);
+
+  // Calculate revenue from orders
+  const revenueResult = await Order.aggregate([
+    { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+  ]);
+  const totalRevenue = revenueResult[0]?.total || 0;
+
+  // Calculate growth percentages (mock for now - you can implement real calculations)
   const stats = {
-    totalUsers: 150,
-    totalProducts: 45,
-    totalOrders: 89,
-    revenue: 15420
+    totalUsers,
+    totalProducts,
+    totalOrders,
+    revenue: totalRevenue,
+    activeProducts,
+    totalCategories,
+    lowStockProducts,
+    inactiveUsers
   };
 
-  const recentActivity = [
-    { id: 1, action: 'New user registered', user: 'john.doe@college.edu', time: '2 minutes ago' },
-    { id: 2, action: 'Order placed', user: 'jane.smith@college.edu', time: '5 minutes ago' },
-    { id: 3, action: 'Product added', user: 'admin@college.edu', time: '10 minutes ago' },
-    { id: 4, action: 'User updated profile', user: 'mike.wilson@college.edu', time: '15 minutes ago' },
-  ];
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(price);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <AdminLayout title="Dashboard">
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back, {admin.name}!</h2>
-          <p className="text-gray-600 mt-1">Here's what's happening in your college marketplace today.</p>
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
+          <h2 className="text-2xl font-bold">Welcome back, {admin.name}!</h2>
+          <p className="mt-1 opacity-90">
+            Here's your college marketplace overview for today
+          </p>
         </div>
 
         {/* Stats Grid */}
@@ -41,7 +100,9 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <p className="text-xs text-muted-foreground">
+                {stats.inactiveUsers} inactive accounts
+              </p>
             </CardContent>
           </Card>
 
@@ -52,7 +113,9 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalProducts}</div>
-              <p className="text-xs text-muted-foreground">+3 new this week</p>
+              <p className="text-xs text-muted-foreground">
+                {stats.activeProducts} active products
+              </p>
             </CardContent>
           </Card>
 
@@ -63,7 +126,9 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">+8% from last week</p>
+              <p className="text-xs text-muted-foreground">
+                Total orders placed
+              </p>
             </CardContent>
           </Card>
 
@@ -73,52 +138,185 @@ export default async function AdminDashboard() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{stats.revenue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">+15% from last month</p>
+              <div className="text-2xl font-bold">{formatPrice(stats.revenue)}</div>
+              <p className="text-xs text-muted-foreground">
+                Total sales revenue
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+        {/* Alerts Section */}
+        {(stats.lowStockProducts > 0 || stats.inactiveUsers > 0) && (
+          <Card className="border-yellow-200 bg-yellow-50">
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest actions in your marketplace</CardDescription>
+              <CardTitle className="flex items-center text-yellow-800">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Attention Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-yellow-700">
+                {stats.lowStockProducts > 0 && (
+                  <p>• {stats.lowStockProducts} products have low stock (≤5 items)</p>
+                )}
+                {stats.inactiveUsers > 0 && (
+                  <p>• {stats.inactiveUsers} user accounts are inactive</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>Latest customer orders</CardDescription>
+              </div>
+              <Link href="/admin/orders">
+                <Button variant="outline" size="sm">
+                  <Eye className="mr-2 h-4 w-4" />
+                  View All
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-gray-500">{activity.user}</p>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order: any) => (
+                    <div key={order._id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">#{order.orderNumber}</p>
+                        <p className="text-xs text-gray-500">
+                          {order.user?.name || 'Unknown User'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-sm">{formatPrice(order.totalAmount)}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {order.orderStatus}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge variant="outline">{activity.time}</Badge>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No orders yet</p>
+                )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Users */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>New Users</CardTitle>
+                <CardDescription>Recently registered students</CardDescription>
+              </div>
+              <Link href="/admin/users">
+                <Button variant="outline" size="sm">
+                  <Eye className="mr-2 h-4 w-4" />
+                  View All
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentUsers.length > 0 ? (
+                  recentUsers.map((user: any) => (
+                    <div key={user._id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">{user.name}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">{formatDate(user.createdAt)}</p>
+                        <Badge variant={user.isActive ? 'default' : 'secondary'} className="text-xs">
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No new users</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common administrative tasks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/admin/products/create">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                  <Plus className="h-5 w-5" />
+                  <span className="text-sm">Add Product</span>
+                </Button>
+              </Link>
+              
+              <Link href="/admin/categories/create">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                  <Plus className="h-5 w-5" />
+                  <span className="text-sm">Add Category</span>
+                </Button>
+              </Link>
+              
+              <Link href="/admin/products">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                  <Package className="h-5 w-5" />
+                  <span className="text-sm">Manage Products</span>
+                </Button>
+              </Link>
+              
+              <Link href="/admin/users">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm">Manage Users</span>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{stats.totalCategories}</div>
+              <p className="text-sm text-gray-500">Product categories</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common administrative tasks</CardDescription>
+              <CardTitle className="text-lg">Low Stock</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <button className="w-full text-left p-3 rounded-lg border hover:bg-gray-50">
-                <div className="font-medium">Add New Product</div>
-                <div className="text-sm text-gray-500">Create a new product listing</div>
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border hover:bg-gray-50">
-                <div className="font-medium">Manage Users</div>
-                <div className="text-sm text-gray-500">View and manage user accounts</div>
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border hover:bg-gray-50">
-                <div className="font-medium">View Reports</div>
-                <div className="text-sm text-gray-500">Generate sales and activity reports</div>
-              </button>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">{stats.lowStockProducts}</div>
+              <p className="text-sm text-gray-500">Products need restocking</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Active Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{stats.activeProducts}</div>
+              <p className="text-sm text-gray-500">Currently available</p>
             </CardContent>
           </Card>
         </div>

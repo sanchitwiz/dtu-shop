@@ -1,38 +1,51 @@
-// app/page.tsx
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+// app/page.tsx - Beautiful homepage
+import HeroSection from '@/components/home/HeroSection';
+import FeaturedProducts from '@/components/home/FeaturedProducts';
+import CategorySection from '@/components/home/CategorySection';
+import StatsSection from '@/components/home/StatsSection';
+// import TestimonialsSection from '@/components/home/TestimonialsSection';
+// import CTASection from '@/components/home/CTASection';
+import dbConnect from '@/lib/dbConnect';
+import Product from '@/models/Product';
+import Category from '@/models/Category';
+import { serializeProduct, serializeCategory } from '@/lib/utils/serialization';
 
-export default function HomePage() {
+
+export default async function HomePage() {
+  await dbConnect();
+
+  // Fetch featured products and categories
+  // const [featuredProducts, categories] = await Promise.all([
+  //   Product.find({ isFeatured: true, isActive: true })
+  //     .populate('category', 'name')
+  //     .limit(8)
+  //     .lean(),
+  //   Category.find({ isActive: true })
+  //     .sort({ sortOrder: 1 })
+  //     .limit(6)
+  //     .lean()
+  // ]);
+
+  const [featuredProductsRaw, categoriesRaw] = await Promise.all([
+    Product.find({ isFeatured: true, isActive: true })
+      .populate('category', 'name')
+      .limit(8)
+      .lean(),
+    Category.find({ isActive: true })
+      .sort({ sortOrder: 1 })
+      .limit(6)
+      .lean()
+  ]);
+
+  const featuredProducts = featuredProductsRaw.map(serializeProduct);
+  const categories = categoriesRaw.map(serializeCategory);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col justify-center min-h-screen py-12">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
-              College Marketplace
-            </h1>
-            <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-              Buy and sell items within your college community. Safe, secure, and convenient.
-            </p>
-            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-              <div className="rounded-md shadow">
-                <Link href="/auth/signin">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
-              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-                <Link href="/auth/signup">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Create Account
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen">
+      <HeroSection />
+      <CategorySection categories={categories} />
+      <FeaturedProducts products={featuredProducts} />
+      <StatsSection />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export interface IUser extends Document {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-
+  wishlist: mongoose.Types.ObjectId[]; // Add this field
 
 
   lastLogin?: Date;
@@ -100,6 +100,10 @@ const userSchema = new Schema<IUser>({
     type: Date,
     default: null
   },
+  wishlist: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Product'
+  }],
 
 
 

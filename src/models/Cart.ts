@@ -3,22 +3,20 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICartItem {
   product: mongoose.Types.ObjectId;
-  name: string;
-  price: number;
-  image: string;
   quantity: number;
-  variant?: {
+  price: number;
+  selectedVariants?: {
     type: string;
     value: string;
-  };
+    price?: number;
+  }[];
 }
 
 export interface ICart extends Document {
   _id: string;
   user: mongoose.Types.ObjectId;
   items: ICartItem[];
-  totalItems: number;
-  totalPrice: number;
+  totalAmount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,48 +27,41 @@ const cartItemSchema = new Schema({
     ref: 'Product',
     required: true
   },
-  name: {
-    type: String,
-    required: true
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 1
   },
   price: {
     type: Number,
     required: true,
     min: 0
   },
-  image: {
-    type: String,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: [1, 'Quantity must be at least 1'],
-    max: [10, 'Quantity cannot exceed 10']
-  },
-  variant: {
+  selectedVariants: [{
     type: {
-      type: String
+      type: String,
+      required: true
     },
     value: {
-      type: String
+      type: String,
+      required: true
+    },
+    price: {
+      type: Number,
+      default: 0
     }
-  }
+  }]
 });
 
 const cartSchema = new Schema<ICart>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    unique: true
+    required: true
   },
   items: [cartItemSchema],
-  totalItems: {
-    type: Number,
-    default: 0
-  },
-  totalPrice: {
+  totalAmount: {
     type: Number,
     default: 0
   }
@@ -78,6 +69,13 @@ const cartSchema = new Schema<ICart>({
   timestamps: true
 });
 
-// cartSchema.index({ user: 1 });
+// Calculate total amount before saving
+cartSchema.pre('save', function(next) {
+  this.totalAmount = this.items.reduce((total, item) => {
+    const variantPrice = item.selectedVariants?.reduce((sum, variant) => sum + (variant.price || 0), 0) || 0;
+    return total + ((item.price + variantPrice) * item.quantity);
+  }, 0);
+  next();
+});
 
 export default mongoose.models.Cart || mongoose.model<ICart>('Cart', cartSchema);

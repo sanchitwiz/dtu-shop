@@ -7,6 +7,7 @@ import User from '@/models/User';
 import { comparePassword } from '@/lib/auth/password';
 import { signInSchema } from '@/schemas/auth';
 import dbConnect from '@/lib/dbConnect';
+// import { authOp}
 
 // MongoDB client for NextAuth adapter
 const client = new MongoClient(process.env.MONGODB_URI!);

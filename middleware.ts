@@ -22,7 +22,7 @@ export default withAuth(
     }
 
     // User dashboard and profile protection
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile')) {
+    if (pathname.startsWith('/profile')) {
       if (!token) {
         const signInUrl = new URL('/auth/signin', req.url);
         signInUrl.searchParams.set('callbackUrl', pathname);
@@ -145,7 +145,6 @@ export default withAuth(
 
         // Protected user routes require authentication
         if (
-          pathname.startsWith('/dashboard') ||
           pathname.startsWith('/profile') ||
           pathname.startsWith('/cart') ||
           pathname.startsWith('/checkout') ||

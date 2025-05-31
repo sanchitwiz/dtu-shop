@@ -20,8 +20,7 @@ export const productCreateSchema = z.object({
     .max(2000, 'Description cannot exceed 2000 characters'),
   shortDescription: z
     .string()
-    .max(300, 'Short description cannot exceed 300 characters')
-    .optional(),
+    .max(300, 'Short description cannot exceed 300 characters'), // Remove .default('') and .optional()
   price: z
     .number()
     .positive('Price must be greater than 0')
@@ -37,41 +36,16 @@ export const productCreateSchema = z.object({
     .max(5, 'Maximum 5 images allowed'),
   tags: z
     .array(z.string().trim().min(1))
-    .max(10, 'Maximum 10 tags allowed')
-    .default([]),
-  variants: z.array(productVariantSchema).default([]),
-  quantity: z.number().int().min(0, 'Quantity cannot be negative'),
-//   inventory: z.object({
-//     quantity: z.number().int().min(0, 'Quantity cannot be negative'),
-//     lowStockThreshold: z.number().int().min(0).default(5),
-//     trackQuantity: z.boolean().default(true),
-//   }),
-//   specifications: z.record(z.string()).optional(),
-  isActive: z.boolean().default(true),
-  isFeatured: z.boolean().default(false),
-//   weight: z.number().positive().optional(),
-//   dimensions: z.object({
-//     length: z.number().positive(),
-//     width: z.number().positive(),
-//     height: z.number().positive(),
-//   }).optional(),
+    .max(10, 'Maximum 10 tags allowed'), // Remove .default([])
+  variants: z.array(productVariantSchema), // Remove .default([])
+  quantity: z.number().int().min(0, 'Quantity cannot be negative'), // Remove .default(0)
+  isActive: z.boolean(), // Remove .default(true)
+  isFeatured: z.boolean(), // Remove .default(false)
 });
 
 export const productUpdateSchema = productCreateSchema.partial();
-
-export const productSearchSchema = z.object({
-  query: z.string().optional(),
-  category: z.string().optional(),
-  minPrice: z.string().regex(/^\d+$/).transform(Number).optional(),
-  maxPrice: z.string().regex(/^\d+$/).transform(Number).optional(),
-  tags: z.string().optional(),
-  page: z.string().regex(/^\d+$/).transform(Number).default('1'),
-  limit: z.string().regex(/^\d+$/).transform(Number).default('12'),
-  sort: z.enum(['price-asc', 'price-desc', 'name-asc', 'name-desc', 'newest']).default('newest'),
-});
 
 // Type inference
 export type ProductVariant = z.infer<typeof productVariantSchema>;
 export type ProductCreateInput = z.infer<typeof productCreateSchema>;
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
-export type ProductSearchInput = z.infer<typeof productSearchSchema>;

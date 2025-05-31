@@ -1,5 +1,6 @@
 // models/Product.ts
 import mongoose, { Document, Schema } from 'mongoose';
+import './Category';
 
 export interface IProductVariant {
   type: string; // e.g., 'size', 'color'
@@ -11,35 +12,17 @@ export interface IProductVariant {
 export interface IProduct extends Document {
   _id: string;
   name: string;
-  // slug: string;
   description: string;
   shortDescription?: string;
   price: number;
-  comparePrice?: number; // Original price for discount display
+  comparePrice?: number;
   category: mongoose.Types.ObjectId;
   images: string[];
   tags: string[];
   variants: IProductVariant[];
-//   inventory: {
-//     quantity: number;
-//     lowStockThreshold: number;
-//     trackQuantity: boolean;
-//   };
   quantity: number;
-//   specifications?: {
-//     [key: string]: string;
-//   };
   isActive: boolean;
   isFeatured: boolean;
-//   weight?: number;
-//   dimensions?: {
-//     length: number;
-//     width: number;
-//     height: number;
-//   };
-
-//   seoTitle?: string;
-//   seoDescription?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -98,7 +81,7 @@ const productSchema = new Schema<IProduct>({
   },
   // slug: {
   //   type: String,
-  //   required: true,
+  //   required: true, 
   //   unique: true,
   //   lowercase: true
   // },

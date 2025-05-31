@@ -18,7 +18,8 @@ import {
   Home,
   LogOut,
   Menu,
-  X
+  X,
+  List
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -60,6 +61,7 @@ export default function AdminLayout({ children, title = 'Admin Panel' }: AdminLa
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Users', href: '/admin/users', icon: Users },
+    {name: 'Categories', href: '/admin/categories', icon: List},
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

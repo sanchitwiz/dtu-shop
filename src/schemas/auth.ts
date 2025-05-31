@@ -99,6 +99,7 @@ export const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// schemas/auth.ts - Update the profileUpdateSchema
 export const profileUpdateSchema = z.object({
   name: z
     .string()
@@ -114,9 +115,10 @@ export const profileUpdateSchema = z.object({
     city: z.string().min(1, 'City is required'),
     state: z.string().min(1, 'State is required'),
     zipCode: z.string().regex(/^\d{6}$/, 'Please enter a valid 6-digit PIN code'),
-    country: z.string().default('India'),
+    country: z.string(), // Remove .optional() and use .default()
   }).optional(),
 });
+
 
 // Type inference
 export type SignInInput = z.infer<typeof signInSchema>;
