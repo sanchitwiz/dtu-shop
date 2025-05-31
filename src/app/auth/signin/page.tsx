@@ -1,7 +1,7 @@
 // app/auth/signin/page.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInSchema, type SignInInput } from '@/schemas/auth';
@@ -15,7 +15,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function SigninPage() {
+function SigninContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -209,5 +209,28 @@ export default function SigninPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SigninPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="text-gray-600">Loading sign in page...</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function SigninPage() {
+  return (
+    <Suspense fallback={<SigninPageFallback />}>
+      <SigninContent />
+    </Suspense>
   );
 }

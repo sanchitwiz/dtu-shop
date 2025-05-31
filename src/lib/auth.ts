@@ -51,13 +51,9 @@ export const authOptions: AuthOptions = {
         }
 
         try {
-          // Validate input using Zod schema
           const validatedCredentials = signInSchema.parse(credentials);
-          
-          // Connect to database
           await dbConnect();
           
-          // Find user by email
           const user = await User.findOne({ 
             email: validatedCredentials.email.toLowerCase() 
           }).select('+password');
@@ -83,7 +79,6 @@ export const authOptions: AuthOptions = {
             throw new Error('This account uses social login. Please sign in with Google.');
           }
 
-          // Return user object for session
           return {
             id: user._id.toString(),
             email: user.email,
@@ -104,11 +99,11 @@ export const authOptions: AuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
 
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
 
   callbacks: {

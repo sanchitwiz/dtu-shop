@@ -1,10 +1,10 @@
-// app/api/products/[id]/route.ts
+// src/app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { productUpdateSchema } from '@/schemas/product';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
 import dbConnect from '@/lib/dbConnect';
-import { requireAdmin } from '@/lib/auth/adminAuth';
+import { checkAdminAuth } from '@/lib/auth/apiAuth';
 import mongoose from 'mongoose';
 
 /**
@@ -12,12 +12,12 @@ import mongoose from 'mongoose';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Changed to Promise
 ) {
   try {
     await dbConnect();
     
-    const { id } = params;
+    const { id } = await params; // Await the params
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -54,13 +54,13 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Changed to Promise
 ) {
   try {
     // Check admin authentication
-    await requireAdmin();
+    await checkAdminAuth();
     
-    const { id } = params;
+    const { id } = await params; // Await the params
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -86,23 +86,12 @@ export async function PUT(
       );
     }
     
-    // If category is being updated, verify it exists
-    if (validatedData.category) {
-      const categoryExists = await Category.findById(validatedData.category);
-      if (!categoryExists) {
-        return NextResponse.json(
-          { error: 'Category not found' },
-          { status: 400 }
-        );
-      }
-    }
-    
-    // Update product (no slug handling needed)
+    // Update product
     const product = await Product.findByIdAndUpdate(
       id,
       validatedData,
       { new: true, runValidators: true }
-    ).populate('category', 'name slug');
+    ).populate('category', 'name');
     
     return NextResponse.json({
       message: 'Product updated successfully',
@@ -111,6 +100,20 @@ export async function PUT(
     
   } catch (error: any) {
     console.error('Error updating product:', error);
+    
+    if (error.message === 'Authentication required') {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    if (error.message === 'Admin access required') {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
     
     if (error.name === 'ZodError') {
       return NextResponse.json(
@@ -131,13 +134,13 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Changed to Promise
 ) {
   try {
     // Check admin authentication
-    await requireAdmin();
+    await checkAdminAuth();
     
-    const { id } = params;
+    const { id } = await params; // Await the params
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -167,6 +170,21 @@ export async function DELETE(
     
   } catch (error: any) {
     console.error('Error deleting product:', error);
+    
+    if (error.message === 'Authentication required') {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    if (error.message === 'Admin access required') {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }
