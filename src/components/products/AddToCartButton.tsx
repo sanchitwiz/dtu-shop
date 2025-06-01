@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ShoppingCart, Loader2, Plus, Minus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Variant {
   type: string;
@@ -77,6 +78,22 @@ export default function AddToCartSection({ product }: AddToCartSectionProps) {
       router.push('/auth/signin?callbackUrl=' + encodeURIComponent(window.location.pathname));
       return;
     }
+
+    const addToCartPromise = fetch('/api/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: product._id,
+        quantity,
+        selectedVariants: selectedVariants
+      }),
+    });
+  
+    toast.promise(addToCartPromise, {
+      loading: 'Adding to cart...',
+      success: 'Product added to cart successfully!',
+      error: 'Failed to add to cart',
+    });
 
     // Check if all required variants are selected
     const requiredVariants = Object.keys(variantGroups);

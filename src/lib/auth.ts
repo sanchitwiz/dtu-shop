@@ -1,4 +1,4 @@
-// lib/auth.ts
+// lib/auth.ts - Updated with session update support
 import { AuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -88,6 +88,8 @@ export const authOptions: AuthOptions = {
             collegeId: user.collegeId,
             department: user.department,
             year: user.year,
+            phone: user.phone,
+            bio: user.bio,
           };
         } catch (error: any) {
           console.error('Authentication error:', error.message);
@@ -107,11 +109,13 @@ export const authOptions: AuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // Handle initial sign in
       if (user) {
         token.role = user.role;
         token.collegeId = user.collegeId;
         token.department = user.department;
+        token.phone = user.phone;
         token.year = user.year;
         
         if (account?.provider === 'google') {
@@ -141,12 +145,30 @@ export const authOptions: AuthOptions = {
             token.collegeId = existingUser.collegeId;
             token.department = existingUser.department;
             token.year = existingUser.year;
+            token.phone = existingUser.phone;
+            token.bio = existingUser.bio;
           }
         }
+      }
+
+      // Handle session updates from client
+      if (trigger === "update" && session) {
+        console.log('Updating session with:', session);
+        
+        // Update token with new session data
+        if (session.name !== undefined) token.name = session.name;
+        if (session.email !== undefined) token.email = session.email;
+        if (session.phone !== undefined) token.phone = session.phone;
+        if (session.collegeId !== undefined) token.collegeId = session.collegeId;
+        if (session.department !== undefined) token.department = session.department;
+        if (session.year !== undefined) token.year = session.year;
+        if (session.bio !== undefined) token.bio = session.bio;
+        if (session.image !== undefined) token.picture = session.image;
       }
       
       return token;
     },
+    
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!;
@@ -154,18 +176,25 @@ export const authOptions: AuthOptions = {
         session.user.collegeId = token.collegeId as string;
         session.user.department = token.department as string;
         session.user.year = token.year as number;
+        session.user.phone = token.phone as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.image = token.picture as string;
       }
       
       return session;
     },
+    
     async signIn({ user, account, profile }) {
       return true;
     },
   },
+  
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
+  
   events: {
     async signIn({ user, account, profile, isNewUser }) {
       console.log(`User signed in: ${user.email} via ${account?.provider}`);

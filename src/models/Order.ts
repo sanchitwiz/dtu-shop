@@ -7,20 +7,11 @@ export interface IOrderItem {
   price: number;
   quantity: number;
   image: string;
-  variant?: {
+  selectedVariants?: {
     type: string;
     value: string;
-  };
-}
-
-export interface IShippingAddress {
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  phone: string;
+    price: number;
+  }[];
 }
 
 export interface IOrder extends Document {
@@ -28,19 +19,24 @@ export interface IOrder extends Document {
   orderNumber: string;
   user: mongoose.Types.ObjectId;
   items: IOrderItem[];
-  shippingAddress: IShippingAddress;
-  paymentMethod: 'razorpay' | 'cod';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  subtotal: number;
-//   shippingCost: number;
-//   tax: number;
   totalAmount: number;
-  paymentId?: string;
-//   notes?: string;
-  trackingNumber?: string;
-  estimatedDelivery?: Date;
-  deliveredAt?: Date;
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount: number;
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentMethod: 'cash_on_delivery' | 'upi' | 'card' | 'net_banking';
+  shippingAddress: {
+    fullName: string;
+    phone: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    landmark?: string;
+  };
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,30 +65,25 @@ const orderItemSchema = new Schema({
     type: String,
     required: true
   },
-  variant: {
+  selectedVariants: [{
     type: {
-      type: String
+      type: String,
+      required: true
     },
     value: {
-      type: String
+      type: String,
+      required: true
+    },
+    price: {
+      type: Number,
+      default: 0
     }
-  }
-});
-
-const shippingAddressSchema = new Schema({
-  fullName: { type: String, required: true },
-  street: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  zipCode: { type: String, required: true },
-  country: { type: String, required: true, default: 'India' },
-  phone: { type: String, required: true }
+  }]
 });
 
 const orderSchema = new Schema<IOrder>({
   orderNumber: {
     type: String,
-    required: true,
     unique: true
   },
   user: {
@@ -101,58 +92,103 @@ const orderSchema = new Schema<IOrder>({
     required: true
   },
   items: [orderItemSchema],
-  shippingAddress: {
-    type: shippingAddressSchema,
-    required: true
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['razorpay', 'cod'],
-    required: true
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'paid', 'failed', 'refunded'],
-    default: 'pending'
-  },
-  orderStatus: {
-    type: String,
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
+  totalAmount: {
+    type: Number,
+    required: true,
+    min: 0
   },
   subtotal: {
     type: Number,
     required: true,
     min: 0
   },
-//   shippingCost: {
-//     type: Number,
-//     default: 0,
-//     min: 0
-//   },
-//   tax: {
-//     type: Number,
-//     default: 0,
-//     min: 0
-//   },
-  totalAmount: {
+  tax: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0
   },
-  paymentId: String,
-//   notes: String,
-  trackingNumber: String,
-  estimatedDelivery: Date,
-  deliveredAt: Date
+  shipping: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cash_on_delivery', 'upi', 'card', 'net_banking'],
+    required: true
+  },
+  shippingAddress: {
+    fullName: {
+      type: String,
+      required: true
+    },
+    phone: {
+      type: String,
+      required: true
+    },
+    street: {
+      type: String,
+      required: true
+    },
+    city: {
+      type: String,
+      required: true
+    },
+    state: {
+      type: String,
+      required: true
+    },
+    zipCode: {
+      type: String,
+      required: true
+    },
+    landmark: String
+  },
+  notes: String
 }, {
   timestamps: true
 });
 
-// Indexes for efficient queries
-// orderSchema.index({ user: 1, createdAt: -1 });
-// orderSchema.index({ orderNumber: 1 });
-// orderSchema.index({ orderStatus: 1 });
-// orderSchema.index({ paymentStatus: 1 });
+// Enhanced pre-save hook
+orderSchema.pre('save', async function(next) {
+  if (this.isNew && !this.orderNumber) {
+    let orderNumber: string;
+    let isUnique = false;
+    let attempts = 0;
+    
+    do {
+      const timestamp = Date.now().toString();
+      const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+      orderNumber = `DTU${timestamp.slice(-6)}${random}`;
+      
+      // Check if this order number already exists
+      const existingOrder = await mongoose.models.Order.findOne({ orderNumber });
+      isUnique = !existingOrder;
+      attempts++;
+      
+      if (attempts > 10) {
+        return next(new Error('Failed to generate unique order number'));
+      }
+    } while (!isUnique);
+    
+    this.orderNumber = orderNumber;
+  }
+  next();
+});
 
 export default mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema);

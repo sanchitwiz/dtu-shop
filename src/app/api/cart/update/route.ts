@@ -1,10 +1,16 @@
 // app/api/cart/update/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/dbConnect';
 import Cart from '@/models/Cart';
+import Product from '@/models/Product';
+import { z } from 'zod';
+
+const updateCartSchema = z.object({
+  itemId: z.string(),
+  quantity: z.number().min(1).max(10)
+});
 
 export async function PUT(request: NextRequest) {
   try {
@@ -17,14 +23,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { itemId, quantity } = await request.json();
+    const body = await request.json();
+    const validatedData = updateCartSchema.parse(body);
     
-    if (!itemId || !quantity || quantity < 1) {
-      return NextResponse.json(
-        { error: 'Invalid item ID or quantity' },
-        { status: 400 }
-      );
-    }
+    // if (!itemId || !quantity || quantity < 1) {
+    //   return NextResponse.json(
+    //     { error: 'Invalid item ID or quantity' },
+    //     { status: 400 }
+    //   );
+    // }
 
     await dbConnect();
 
@@ -37,7 +44,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const itemIndex = cart.items.findIndex((item: { _id: string }) => item._id.toString() === itemId);
+    const itemIndex = cart.items.findIndex((item: any) => 
+      item._id.toString() === validatedData.itemId
+    );
+
     
     if (itemIndex === -1) {
       return NextResponse.json(
@@ -46,16 +56,47 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    cart.items[itemIndex].quantity = quantity;
+    const product = await Product.findById(cart.items[itemIndex].product);
+
+    if (!product || !product.isActive) {
+      return NextResponse.json(
+        { error: 'Product is no longer available' },
+        { status: 400 }
+      );
+    }
+
+    if (product.quantity < validatedData.quantity) {
+      return NextResponse.json(
+        { error: `Only ${product.quantity} units available` },
+        { status: 400 }
+      );
+    }
+
+    cart.items[itemIndex].quantity = validatedData.quantity;
+    cart.totalAmount = cart.items.reduce((total: number, item: any) => {
+      return total + (item.price * item.quantity);
+    }, 0);
     await cart.save();
 
     return NextResponse.json({
       message: 'Cart updated successfully',
-      cart
+      cart: {
+        itemCount: cart.items.length,
+        totalAmount: cart.totalAmount
+      }
     });
+
 
   } catch (error: any) {
     console.error('Error updating cart:', error);
+    
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update cart' },
       { status: 500 }

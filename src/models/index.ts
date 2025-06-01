@@ -10,5 +10,5 @@ export type { IUser } from './User';
 export type { ICategory } from './Category';
 export type { IProduct, IProductVariant } from './Product';
 export type { ICart, ICartItem } from './Cart';
-export type { IOrder, IOrderItem, IShippingAddress } from './Order';
+export type { IOrder, IOrderItem } from './Order';
 export type { IReview } from './Review';

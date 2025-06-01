@@ -31,14 +31,9 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
 
   const user = userData as any;
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+// ✅ Solution: Use consistent formatting or suppress hydration
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0]; // Simple YYYY-MM-DD format
   };
 
   return (
@@ -126,7 +121,8 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Last Updated</span>
-                    <span className="text-sm font-medium">
+                    <span suppressHydrationWarning className="text-sm font-medium">
+                      
                       {new Date(user.updatedAt).toLocaleDateString('en-IN', {
                         month: 'short',
                         day: 'numeric'

@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import ProductDeleteButton from '@/components/admin/ProductDeleteButton';
+// import ClientDate from '@/components/ui/ClientDate';
 
 interface ProductViewPageProps {
   params: Promise<{ id: string }>; // Note: params is now a Promise
@@ -209,19 +210,22 @@ export default async function ProductViewPage({ params }: ProductViewPageProps) 
                 <div>
                   <label className="text-sm font-medium text-gray-500">Created</label>
                   <div className="mt-1 text-sm text-gray-600">
-                    {new Date(productData.createdAt).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  {<span suppressHydrationWarning className="text-gray-600">
+                      {new Date(productData.createdAt).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>}
                   </div>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">Last Updated</label>
                   <div className="mt-1 text-sm text-gray-600">
+                  <span suppressHydrationWarning className="text-gray-600">
                     {new Date(productData.updatedAt).toLocaleDateString('en-IN', {
                       year: 'numeric',
                       month: 'long',
@@ -229,6 +233,7 @@ export default async function ProductViewPage({ params }: ProductViewPageProps) 
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
+                    </span>
                   </div>
                 </div>
               </CardContent>

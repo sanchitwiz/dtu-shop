@@ -1,12 +1,16 @@
-// app/api/cart/remove/route.ts
+// app/api/cart/remove/route.ts - Updated with ObjectId handling
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
 import dbConnect from '@/lib/dbConnect';
 import Cart from '@/models/Cart';
 
-export async function DELETE(request: NextRequest) {
+const removeFromCartSchema = z.object({
+  itemId: z.string()
+});
+
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -17,14 +21,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { itemId } = await request.json();
-    
-    if (!itemId) {
-      return NextResponse.json(
-        { error: 'Item ID is required' },
-        { status: 400 }
-      );
-    }
+    const body = await request.json();
+    const validatedData = removeFromCartSchema.parse(body);
 
     await dbConnect();
 
@@ -37,16 +35,34 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    cart.items = cart.items.filter((item: { _id: string }) => item._id.toString() !== itemId);
+    // Remove item from cart
+    cart.items = cart.items.filter((item: any) => item._id.toString() !== validatedData.itemId);
+
+    // Recalculate total
+    cart.totalAmount = cart.items.reduce((total: number, item: any) => {
+      return total + (item.price * item.quantity);
+    }, 0);
+
     await cart.save();
 
     return NextResponse.json({
       message: 'Item removed from cart successfully',
-      cart
+      cart: {
+        itemCount: cart.items.length,
+        totalAmount: cart.totalAmount
+      }
     });
 
   } catch (error: any) {
     console.error('Error removing from cart:', error);
+    
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to remove item from cart' },
       { status: 500 }

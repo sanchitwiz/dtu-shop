@@ -214,7 +214,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                         </Badge>
                       </td>
                       <td className="p-3">
-                        <span className="text-sm text-gray-500">
+                        <span suppressHydrationWarning className="text-sm text-gray-500">
                           {new Date(user.createdAt).toLocaleDateString('en-IN', {
                             year: 'numeric',
                             month: 'short',

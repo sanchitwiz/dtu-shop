@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import { 
   ShoppingCart, 
   Plus, 
@@ -53,6 +54,7 @@ export default function CartPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -143,6 +145,44 @@ export default function CartPage() {
   const getItemTotal = (item: CartItem) => {
     const variantPrice = item.selectedVariants?.reduce((sum, variant) => sum + variant.price, 0) || 0;
     return (item.price + variantPrice) * item.quantity;
+  };
+
+  const handleCheckout = async () => {
+    if (!cart || cart.items.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in to checkout');
+      router.push('/auth/signin?callbackUrl=/cart');
+      return;
+    }
+
+    setIsProcessingCheckout(true);
+
+    try {
+      // Validate cart items before checkout
+      const response = await fetch('/api/cart/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Redirect to checkout page
+        router.push('/checkout');
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Unable to proceed to checkout');
+        
+        // Refresh cart to show updated availability
+        await fetchCart();
+      }
+    } catch (error) {
+      toast.error('An error occurred. Please try again.');
+    } finally {
+      setIsProcessingCheckout(false);
+    }
   };
 
   if (authLoading || isLoading) {
@@ -308,7 +348,8 @@ export default function CartPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
+{/* Order Summary */}
+<div className="lg:col-span-1">
             <Card className="sticky top-24">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
@@ -321,11 +362,13 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span className="text-green-600">Free</span>
+                    <span className="text-green-600">
+                      {cart.totalAmount > 500 ? 'Free' : formatPrice(50)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Tax</span>
-                    <span>Calculated at checkout</span>
+                    <span>Tax (GST 18%)</span>
+                    <span>{formatPrice(Math.round(cart.totalAmount * 0.18))}</span>
                   </div>
                 </div>
 
@@ -333,18 +376,51 @@ export default function CartPage() {
 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>{formatPrice(cart.totalAmount)}</span>
+                  <span>
+                    {formatPrice(
+                      cart.totalAmount + 
+                      Math.round(cart.totalAmount * 0.18) + 
+                      (cart.totalAmount > 500 ? 0 : 50)
+                    )}
+                  </span>
                 </div>
 
-                <Button className="w-full" size="lg">
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Proceed to Checkout
+                {cart.totalAmount <= 500 && (
+                  <p className="text-sm text-gray-600">
+                    Add {formatPrice(500 - cart.totalAmount)} more for free shipping
+                  </p>
+                )}
+
+                <Button 
+                  className="w-full bg-red-600 hover:bg-red-700" 
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={isProcessingCheckout || cart.items.length === 0}
+                >
+                  {isProcessingCheckout ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      Proceed to Checkout
+                    </>
+                  )}
                 </Button>
 
                 <div className="text-center">
-                  <Link href="/products" className="text-blue-600 hover:underline text-sm">
+                  <Link href="/products" className="text-red-600 hover:underline text-sm">
                     Continue Shopping
                   </Link>
+                </div>
+
+                {/* Security Notice */}
+                <div className="bg-gray-50 p-3 border border-gray-200 text-center">
+                  <p className="text-xs text-gray-600">
+                    🔒 Secure checkout powered by DTU Shop
+                  </p>
                 </div>
               </CardContent>
             </Card>

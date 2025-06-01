@@ -71,13 +71,9 @@ export default async function AdminDashboard() {
     }).format(price);
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+// ✅ Solution: Use consistent formatting or suppress hydration
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0]; // Simple YYYY-MM-DD format
   };
 
   return (

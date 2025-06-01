@@ -13,6 +13,7 @@ declare module 'next-auth' {
       collegeId?: string;
       department?: string;
       year?: number;
+      phone?: string;
     } & DefaultSession['user'];
   }
 
@@ -21,6 +22,7 @@ declare module 'next-auth' {
     collegeId?: string;
     department?: string;
     year?: number;
+    phone?: string;
   }
 }
 
@@ -30,5 +32,6 @@ declare module 'next-auth/jwt' {
     collegeId?: string;
     department?: string;
     year?: number;
+    phone?: string;
   }
 }
