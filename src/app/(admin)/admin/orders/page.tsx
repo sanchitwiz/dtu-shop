@@ -140,9 +140,11 @@ export default function AdminOrdersPage() {
   };
 
 // ✅ Solution: Use consistent formatting or suppress hydration
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toISOString().split('T')[0]; // Simple YYYY-MM-DD format
-  };
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  return date.toISOString().split('T')[0];
+};
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -169,6 +171,12 @@ export default function AdminOrdersPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
+            <Link href='/admin'>
+              <Button variant="ghost" className="mb-4 cursor-pointer">
+                <Package className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
             <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
             <p className="text-gray-600">Manage and track all customer orders</p>
           </div>

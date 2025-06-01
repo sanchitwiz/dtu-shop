@@ -142,9 +142,11 @@ export default function OrderDetailsPage() {
   };
 
 // ✅ Solution: Use consistent formatting or suppress hydration
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toISOString().split('T')[0]; // Simple YYYY-MM-DD format
-  };
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  return date.toISOString().split('T')[0];
+};
 
   const getEstimatedDelivery = () => {
     if (!order) return '';

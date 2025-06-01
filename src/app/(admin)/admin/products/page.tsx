@@ -15,12 +15,29 @@ export default async function AdminProducts() {
   await requireAdmin();
   await dbConnect();
 
-  // Fetch products with categories
-  const products = await Product.find({})
-    .populate('category', 'name')
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .lean();
+  const productsRaw = await Product.find({})
+  .populate('category', 'name')
+  .sort({ createdAt: -1 })
+  .lean(); // Important: use .lean() to get plain objects
+
+// Serialize the products data to remove Mongoose ObjectIds
+const products = productsRaw.map((product: any) => ({
+  _id: product._id.toString(), // Convert ObjectId to string
+  name: product.name || '',
+  description: product.description || '',
+  price: product.price || 0,
+  comparePrice: product.comparePrice || null,
+  category: {
+    _id: product.category?._id?.toString() || '',
+    name: product.category?.name || ''
+  },
+  quantity: product.quantity || 0,
+  isActive: product.isActive ?? true,
+  isFeatured: product.isFeatured ?? false,
+  images: product.images || [],
+  createdAt: product.createdAt?.toString() || '',
+  updatedAt: product.updatedAt?.toString() || ''
+}));
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -134,9 +151,12 @@ export default async function AdminProducts() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </Link>
-                          <Button size="sm" variant="outline" className="text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+
+                          <ProductDeleteButton 
+                            productId={product._id} 
+                            productName={product.name} 
+                          />
+
                         </div>
                       </td>
                     </tr>

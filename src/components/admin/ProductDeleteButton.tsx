@@ -1,21 +1,11 @@
-// components/admin/ProductDeleteButton.tsx
+// components/admin/ProductDeleteButton.tsx - Enhanced error handling
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Trash2, Loader2 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ProductDeleteButtonProps {
   productId: string;
@@ -23,64 +13,71 @@ interface ProductDeleteButtonProps {
 }
 
 export default function ProductDeleteButton({ productId, productName }: ProductDeleteButtonProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      return;
+    }
+
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      console.log('Deleting product:', productId); // Debug log
+      
+      const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete product');
+      console.log('Delete response status:', response.status); // Debug log
+      console.log('Delete response headers:', response.headers.get('content-type')); // Debug log
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response:', textResponse);
+        throw new Error('Server returned HTML instead of JSON. Check API route.');
       }
 
-      // Refresh the page to show updated list
-      router.refresh();
-      
-    } catch (error) {
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Product deleted successfully');
+        router.refresh();
+      } else {
+        toast.error(data.error || 'Failed to delete product');
+      }
+    } catch (error: any) {
       console.error('Error deleting product:', error);
-      alert('Failed to delete product. Please try again.');
+      
+      if (error.message.includes('Unexpected token')) {
+        toast.error('Server error: API route not found or returning HTML');
+      } else {
+        toast.error('An error occurred while deleting product');
+      }
     } finally {
       setIsDeleting(false);
     }
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Product</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete "{productName}"? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              'Delete'
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Button 
+      size="sm" 
+      variant="outline" 
+      className="text-red-600 border-red-600 hover:bg-red-50"
+      onClick={handleDelete}
+      disabled={isDeleting}
+    >
+      {isDeleting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Trash2 className="h-4 w-4" />
+      )}
+    </Button>
   );
 }

@@ -105,7 +105,9 @@ export default function OrdersPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toISOString().split('T')[0]; // Simple YYYY-MM-DD format
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toISOString().split('T')[0];
   };
 
   if (authLoading || isLoading) {

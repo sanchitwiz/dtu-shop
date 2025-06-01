@@ -1,4 +1,4 @@
-// src/app/api/products/[id]/route.ts
+// src/app/api/products/[id]/route.ts - Fixed version
 import { NextRequest, NextResponse } from 'next/server';
 import { productUpdateSchema } from '@/schemas/product';
 import Product from '@/models/Product';
@@ -6,20 +6,21 @@ import Category from '@/models/Category';
 import dbConnect from '@/lib/dbConnect';
 import { checkAdminAuth } from '@/lib/auth/apiAuth';
 import mongoose from 'mongoose';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 /**
- * GET /api/products/[id] - Get single product
+ * GET /api/products/[id] - Get single product with proper serialization
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // Changed to Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const { id } = await params; // Await the params
+    const { id } = await params;
     
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid product ID' },
@@ -27,16 +28,39 @@ export async function GET(
       );
     }
     
-    const product = await Product.findById(id)
+    const productData = await Product.findById(id)
       .populate('category', 'name slug')
-      .lean();
+      // .lean();
     
-    if (!product) {
+    if (!productData) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
+    
+    // Serialize the product data properly
+    const product = {
+      _id: productData._id.toString(),
+      name: productData.name,
+      description: productData.description,
+      shortDescription: productData.shortDescription || '',
+      price: productData.price,
+      comparePrice: productData.comparePrice || null,
+      category: {
+        _id: productData.category._id.toString(),
+        name: productData.category.name,
+        slug: productData.category.slug
+      },
+      quantity: productData.quantity,
+      isActive: productData.isActive,
+      isFeatured: productData.isFeatured || false,
+      images: productData.images || [],
+      tags: productData.tags || [],
+      variants: productData.variants || [],
+      createdAt: productData.createdAt,
+      updatedAt: productData.updatedAt
+    };
     
     return NextResponse.json({ product });
     
@@ -50,19 +74,18 @@ export async function GET(
 }
 
 /**
- * PUT /api/products/[id] - Update product (Admin only)
+ * PUT /api/products/[id] - Update product with better error handling
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // Changed to Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin authentication
     await checkAdminAuth();
     
-    const { id } = await params; // Await the params
+    const { id } = await params;
     
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid product ID' },
@@ -71,9 +94,7 @@ export async function PUT(
     }
     
     const body = await request.json();
-    
-    // Validate input using Zod schema
-    const validatedData = productUpdateSchema.parse(body);
+    console.log('Update request body:', body); // Debug log
     
     await dbConnect();
     
@@ -86,16 +107,84 @@ export async function PUT(
       );
     }
     
+    // Validate category exists if provided
+    if (body.category) {
+      const categoryExists = await Category.findById(body.category);
+      if (!categoryExists) {
+        return NextResponse.json(
+          { error: 'Invalid category ID' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Clean and validate the data
+    const cleanedData = {
+      name: body.name,
+      description: body.description,
+      shortDescription: body.shortDescription || '',
+      price: Number(body.price),
+      comparePrice: body.comparePrice ? Number(body.comparePrice) : null,
+      category: body.category,
+      quantity: Number(body.quantity),
+      isActive: Boolean(body.isActive),
+      isFeatured: Boolean(body.isFeatured),
+      images: Array.isArray(body.images) ? body.images : [],
+      tags: Array.isArray(body.tags) ? body.tags : [],
+      variants: Array.isArray(body.variants) ? body.variants : []
+    };
+    
+    console.log('Cleaned data:', cleanedData); // Debug log
+    
+    // Validate with Zod schema
+    const validatedData = productUpdateSchema.parse(cleanedData);
+    console.log('Validated data:', validatedData); // Debug log
+    
     // Update product
-    const product = await Product.findByIdAndUpdate(
+    const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      validatedData,
-      { new: true, runValidators: true }
-    ).populate('category', 'name');
+      {
+        ...validatedData,
+        updatedAt: new Date()
+      },
+      { 
+        new: true, 
+        runValidators: true,
+        select: '-__v'
+      }
+    ).populate('category', 'name slug');
+    
+    if (!updatedProduct) {
+      return NextResponse.json(
+        { error: 'Failed to update product' },
+        { status: 500 }
+      );
+    }
+    
+    console.log('Product updated successfully:', updatedProduct._id); // Debug log
     
     return NextResponse.json({
       message: 'Product updated successfully',
-      product
+      product: {
+        _id: updatedProduct._id.toString(),
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        shortDescription: updatedProduct.shortDescription,
+        price: updatedProduct.price,
+        comparePrice: updatedProduct.comparePrice,
+        category: {
+          _id: updatedProduct.category._id.toString(),
+          name: updatedProduct.category.name,
+          slug: updatedProduct.category.slug
+        },
+        quantity: updatedProduct.quantity,
+        isActive: updatedProduct.isActive,
+        isFeatured: updatedProduct.isFeatured,
+        images: updatedProduct.images,
+        tags: updatedProduct.tags,
+        variants: updatedProduct.variants,
+        updatedAt: updatedProduct.updatedAt
+      }
     });
     
   } catch (error: any) {
@@ -116,8 +205,23 @@ export async function PUT(
     }
     
     if (error.name === 'ZodError') {
+      console.log('Zod validation errors:', error.errors); // Debug log
       return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
+        { 
+          error: 'Invalid input data', 
+          details: error.errors.map((err: any) => ({
+            field: err.path.join('.'),
+            message: err.message,
+            received: err.received
+          }))
+        },
+        { status: 400 }
+      );
+    }
+    
+    if (error.name === 'ValidationError') {
+      return NextResponse.json(
+        { error: 'Database validation error', details: error.message },
         { status: 400 }
       );
     }
@@ -130,61 +234,55 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/products/[id] - Delete product (Admin only)
+ * DELETE /api/products/[id] - Delete product (unchanged)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // Changed to Promise
-) {
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    // Check admin authentication
-    await checkAdminAuth();
+    const session = await getServerSession(authOptions);
     
-    const { id } = await params; // Await the params
-    
-    // Validate ObjectId
+    if (!session?.user || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid product ID' },
         { status: 400 }
       );
     }
-    
+
     await dbConnect();
-    
-    // Check if product exists
+
     const product = await Product.findById(id);
+    
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
-    
-    // Soft delete by setting isActive to false
-    await Product.findByIdAndUpdate(id, { isActive: false });
-    
+
+    // Soft delete
+    await Product.findByIdAndUpdate(id, { 
+      isActive: false,
+      updatedAt: new Date()
+    });
+
     return NextResponse.json({
       message: 'Product deleted successfully'
     });
-    
+
   } catch (error: any) {
     console.error('Error deleting product:', error);
-    
-    if (error.message === 'Authentication required') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-    
-    if (error.message === 'Admin access required') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }

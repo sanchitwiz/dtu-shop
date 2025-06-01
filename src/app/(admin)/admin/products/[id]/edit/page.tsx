@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productUpdateSchema, type ProductUpdateInput } from '@/schemas/product';
+import { useForm, Controller } from 'react-hook-form';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Plus, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+
 
 interface Category {
   _id: string;
@@ -43,10 +44,20 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
+    control,
     reset
   } = useForm<ProductUpdateInput>({
     resolver: zodResolver(productUpdateSchema),
+    defaultValues: {
+      isActive: true,
+      isFeatured: false,
+    }
   });
+
+    // Watch checkbox values
+    const isActive = watch('isActive');
+    const isFeatured = watch('isFeatured');
 
   // Load product data and categories
   useEffect(() => {
@@ -69,6 +80,25 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
         }
 
         const product = productData.product;
+
+        reset({
+          name: product.name,
+          description: product.description,
+          shortDescription: product.shortDescription || '',
+          price: product.price,
+          comparePrice: product.comparePrice,
+          category: product.category._id,
+          quantity: product.quantity,
+          isActive: product.isActive,
+          isFeatured: product.isFeatured,
+          images: product.images || [],
+          tags: product.tags || [],
+          variants: product.variants || []
+        });
+
+        // Set images and tags for UI
+        setImageUrls(product.images.length > 0 ? product.images : ['']);
+        setTags(product.tags.length > 0 ? product.tags : ['']);
 
         // Set form values
         setValue('name', product.name);
@@ -96,7 +126,9 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     };
 
     loadData();
-  }, [params, setValue]);
+  // }, [params, setValue, reset]);
+  }, [params, reset]);
+
 
   const addImageUrl = () => {
     setImageUrls([...imageUrls, '']);
@@ -256,18 +288,24 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
 
                   <div>
                     <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => setValue('category', value)}>
-                      <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="category"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category._id} value={category._id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {errors.category && (
                       <p className="text-sm text-red-500 mt-1">{errors.category.message}</p>
                     )}
@@ -426,19 +464,39 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isActive"
-                      {...register('isActive')}
+                    <Controller
+                      name="isActive"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isActive"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
-                    <Label htmlFor="isActive">Active</Label>
+                    <Label htmlFor="isActive">Active Product</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isFeatured"
-                      {...register('isFeatured')}
+                    <Controller
+                      name="isFeatured"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isFeatured"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
-                    <Label htmlFor="isFeatured">Featured</Label>
+                    <Label htmlFor="isFeatured">Featured Product</Label>
+                  </div>
+
+                  {/* Visual feedback */}
+                  <div className="text-sm text-gray-600">
+                    <p>Status: {isActive ? 'Active' : 'Inactive'}</p>
+                    <p>Featured: {isFeatured ? 'Yes' : 'No'}</p>
                   </div>
                 </CardContent>
               </Card>

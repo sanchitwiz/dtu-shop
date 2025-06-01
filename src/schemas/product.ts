@@ -40,7 +40,7 @@ export const productCreateSchema = z.object({
   variants: z.array(productVariantSchema), // Remove .default([])
   quantity: z.number().int().min(0, 'Quantity cannot be negative'), // Remove .default(0)
   isActive: z.boolean(), // Remove .default(true)
-  isFeatured: z.boolean(), // Remove .default(false)
+  isFeatured: z.boolean() // Remove .default(false)
 });
 
 export const productUpdateSchema = productCreateSchema.partial();

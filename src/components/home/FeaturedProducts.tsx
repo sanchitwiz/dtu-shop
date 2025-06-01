@@ -52,7 +52,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % totalSlides);
-    }, 4000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, totalSlides, products.length]);

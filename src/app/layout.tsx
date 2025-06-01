@@ -1,12 +1,12 @@
-// app/layout.tsx - Use the client wrapper
+// app/layout.tsx - Use ConditionalNavbar instead of Navbar
 import { Inter } from 'next/font/google';
 import { Providers } from './providers';
-
+// import { CartProvider } from '@/contexts/CartContext';
+import ConditionalNavbar from '@/components/layout/ConditionalNavbar';
+import ConditionalFooter from '@/components/layout/ConditionalFooter';
 import ParallaxWrapper from '@/components/providers/ParallaxWrapper';
-import './globals.css';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/sonner';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,16 +24,18 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <ParallaxWrapper>
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
-          </ParallaxWrapper>
+          {/* <CartProvider> */}
+            <ParallaxWrapper>
+              <div className="min-h-screen flex flex-col">
+                <ConditionalNavbar />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <ConditionalFooter />
+              </div>
+              <Toaster position="top-right" />
+            </ParallaxWrapper>
+          {/* </CartProvider> */}
         </Providers>
       </body>
     </html>
