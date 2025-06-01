@@ -2,7 +2,6 @@
 "use client";
 
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,17 +95,16 @@ export default function ProfilePage() {
 
         {/* Profile Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="orders">My Orders</TabsTrigger>
-            <TabsTrigger value="selling">Selling</TabsTrigger>
             <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Stats Cards */}
               <Card>
                 <CardContent className="p-6">
@@ -119,19 +117,6 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Items Sold</p>
-                      <p className="text-2xl font-bold">0</p>
-                    </div>
-                    <Package className="w-8 h-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -161,12 +146,7 @@ export default function ProfilePage() {
                     <label className="text-sm font-medium text-gray-500">Email</label>
                     <p className="text-lg">{user.email}</p>
                   </div>
-                  {/* {user.phone && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Phone</label>
-                      <p className="text-lg">{user.phone}</p>
-                    </div>
-                  )} */}
+                
                 </CardContent>
               </Card>
 
@@ -214,24 +194,6 @@ export default function ProfilePage() {
                   <Link href="/products">
                     <Button>Browse Products</Button>
                   </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Selling Tab */}
-          <TabsContent value="selling">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Listings</CardTitle>
-                <CardDescription>Manage your products for sale</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No items listed</h3>
-                  <p className="text-gray-600 mb-4">Start selling your items to earn money</p>
-                  <Button>List Your First Item</Button>
                 </div>
               </CardContent>
             </Card>

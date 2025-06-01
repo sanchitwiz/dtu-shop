@@ -126,7 +126,7 @@ export default function Navbar() {
               <Button variant="ghost" size="sm" className="relative hover:bg-red-50">
                 <ShoppingCart className="h-5 w-5 text-gray-600 hover:text-red-600" />
                 <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-xs bg-red-600 hover:bg-red-700">
-                  0
+                  {/* {user?.cart?.length || 0} */}
                 </Badge>
               </Button>
             </Link>

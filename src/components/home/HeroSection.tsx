@@ -14,12 +14,17 @@ export default function HeroSection() {
 
   // Product images for slideshow
   const productImages = [
-    'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Books
-    'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Electronics
-    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Furniture
-    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Clothing
-    'https://images.unsplash.com/photo-1484704849700-f032a568e944?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Stationery
+    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Shirts
+    'https://images.unsplash.com/photo-1603487742131-4160ec999306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Slippers
+    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Bags
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Notebooks
+    'https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Mugs
+    'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Jackets
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Keychains
+    'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Sweatshirts
   ];
+  
+  
 
   // Auto-slide effect
   useEffect(() => {
@@ -47,7 +52,7 @@ export default function HeroSection() {
           <div className="space-y-8">
             <div className="space-y-6">
               <div className="bg-red-50 border border-red-200 px-4 py-2 inline-block">
-                <span className="text-sm font-medium text-red-800">Official DTU Student Marketplace</span>
+                <span className="text-sm font-medium text-red-800">Official DTU Gift Shop</span>
               </div>
               
               <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
@@ -56,7 +61,7 @@ export default function HeroSection() {
               </h1>
               
               <p className="text-lg text-gray-700 leading-relaxed max-w-xl">
-                Browse thousands of products from fellow DTU students. From textbooks to electronics, 
+                Browse thousands of products from fellow DTU Gift Shop. From textbooks to cloths, 
                 discover great deals within your campus community.
               </p>
             </div>
@@ -113,13 +118,17 @@ export default function HeroSection() {
                 
                 {/* Overlay with product category */}
                 <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 px-4 py-2 border border-gray-300">
-                  <span className="text-sm font-medium text-gray-800">
-                    {currentImageIndex === 0 && 'Textbooks & Study Materials'}
-                    {currentImageIndex === 1 && 'Electronics & Gadgets'}
-                    {currentImageIndex === 2 && 'Furniture & Home Decor'}
-                    {currentImageIndex === 3 && 'Clothing & Accessories'}
-                    {currentImageIndex === 4 && 'Stationery & Supplies'}
-                  </span>
+                <span className="text-sm font-medium text-gray-800">
+                  {currentImageIndex === 0 && 'Shirts & T-Shirts'}
+                  {currentImageIndex === 1 && 'Slippers & Footwear'}
+                  {currentImageIndex === 2 && 'Bags & Backpacks'}
+                  {currentImageIndex === 3 && 'Notebooks & Stationery'}
+                  {currentImageIndex === 4 && 'Mugs & Drinkware'}
+                  {currentImageIndex === 5 && 'Jackets & Outerwear'}
+                  {currentImageIndex === 6 && 'Keychains & Accessories'}
+                  {currentImageIndex === 7 && 'Sweatshirts & Hoodies'}
+                </span>
+
                 </div>
               </div>
               

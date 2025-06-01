@@ -70,7 +70,7 @@ export default function ParallaxHeroSection() {
                   Delhi Technological University
                 </span>
                 <span className="block text-red-500 drop-shadow-2xl text-shadow-glow">
-                  SHOP
+                  GIFT SHOP
                 </span>
               </h1>
               
@@ -85,7 +85,7 @@ export default function ParallaxHeroSection() {
             
             {/* Enhanced Subtitle - Responsive */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto leading-relaxed font-light px-4">
-              The Official Platform for DTU Students to Connect, Trade, and Thrive
+              The Official Platform of DTU Gift Shop
             </p>
             
             {/* CTA Button with Enhanced Styling - Responsive */}

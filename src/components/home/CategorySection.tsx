@@ -11,7 +11,7 @@ interface Category {
 }
 
 interface CategorySectionProps {
-  categories: any[];
+  categories: Category[];
 }
 
 export default function CategorySection({ categories }: CategorySectionProps) {
@@ -27,38 +27,46 @@ export default function CategorySection({ categories }: CategorySectionProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {categories.map((category) => (
             <Link
               key={category._id}
               href={`/categories/${category.slug}`}
               className="group"
             >
-              <div className="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  {category.image ? (
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-8 h-8 object-cover rounded"
-                    />
-                  ) : (
-                    <span className="text-white font-bold text-lg">
+            <div className="bg-white p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
+              <div className="w-full h-28 sm:h-28 mx-auto mb-4 group-hover:scale-105 transition-transform">
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '95%', height: '95%', margin: '0 auto' }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center border border-gray-200" style={{ width: '95%', height: '95%', margin: '0 auto' }}>
+                    <span className="text-gray-600 font-bold text-2xl">
                       {category.name.charAt(0)}
                     </span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {category.name}
-                </h3>
+                  </div>
+                )}
               </div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors text-sm sm:text-base">
+                {category.name}
+              </h3>
+            </div>
+
             </Link>
           ))}
         </div>
 
         <div className="text-center mt-12">
           <Link href="/categories">
-            <Button variant="outline" size="lg">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+            >
               View All Categories
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

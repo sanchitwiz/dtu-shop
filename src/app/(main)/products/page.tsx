@@ -172,7 +172,7 @@ function ProductsGridSkeleton() {
         <Card key={i} className="animate-pulse">
           <div className="h-48 bg-gray-200 rounded-t-lg"></div>
           <CardContent className="p-4">
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
             <div className="h-4 bg-gray-200 rounded w-2/3"></div>
           </CardContent>
         </Card>

@@ -109,23 +109,29 @@ export default function CartPage() {
     }
   };
 
+// In your cart page component
   const removeItem = async (itemId: string) => {
     setUpdatingItems(prev => new Set(prev).add(itemId));
     
     try {
       const response = await fetch('/api/cart/remove', {
-        method: 'DELETE',
+        method: 'DELETE', // Make sure this is DELETE, not POST
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ itemId }),
+        body: JSON.stringify({ itemId }), // Make sure itemId is being passed correctly
       });
 
       if (response.ok) {
-        await fetchCart();
+        toast.success('Item removed from cart');
+        await fetchCart(); // Refresh cart data
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to remove item');
       }
     } catch (error) {
       console.error('Error removing item:', error);
+      toast.error('An error occurred while removing item');
     } finally {
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
@@ -278,7 +284,11 @@ export default function CartPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(item._id)}
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent any form submission
+                            e.stopPropagation(); // Stop event bubbling
+                            removeItem(item._id); // Make sure item._id is correct
+                          }}
                           disabled={updatingItems.has(item._id)}
                           className="text-red-600 hover:text-red-700"
                         >
@@ -288,6 +298,7 @@ export default function CartPage() {
                             <Trash2 className="h-4 w-4" />
                           )}
                         </Button>
+
                       </div>
 
                       {/* Price and Quantity */}

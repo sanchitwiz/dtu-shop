@@ -17,6 +17,7 @@ import {
   Star,
   Share2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WishlistItem {
   _id: string;
@@ -109,14 +110,14 @@ export default function WishlistPage() {
 
       if (response.ok) {
         // Show success message or redirect to cart
-        alert('Product added to cart successfully!');
+        toast('Product added to cart successfully!');
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to add to cart');
+        toast(error.error || 'Failed to add to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Failed to add to cart');
+      toast('Failed to add to cart');
     } finally {
       setAddingToCart(prev => {
         const newSet = new Set(prev);

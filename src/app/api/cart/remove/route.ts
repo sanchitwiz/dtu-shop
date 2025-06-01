@@ -10,7 +10,8 @@ const removeFromCartSchema = z.object({
   itemId: z.string()
 });
 
-export async function POST(request: NextRequest) {
+// app/api/cart/remove/route.ts - Ensure DELETE method is exported
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const validatedData = removeFromCartSchema.parse(body);
+    const { itemId } = body;
 
     await dbConnect();
 
@@ -36,7 +37,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Remove item from cart
-    cart.items = cart.items.filter((item: any) => item._id.toString() !== validatedData.itemId);
+    const initialLength = cart.items.length;
+    cart.items = cart.items.filter((item: any) => 
+      item._id.toString() !== itemId
+    );
+
+    if (cart.items.length === initialLength) {
+      return NextResponse.json(
+        { error: 'Item not found in cart' },
+        { status: 404 }
+      );
+    }
 
     // Recalculate total
     cart.totalAmount = cart.items.reduce((total: number, item: any) => {
@@ -55,17 +66,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error removing from cart:', error);
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Failed to remove item from cart' },
       { status: 500 }
     );
   }
 }
+

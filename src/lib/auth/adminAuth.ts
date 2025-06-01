@@ -1,9 +1,9 @@
 // lib/auth/adminAuth.ts
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth'; // Updated import
+import { redirect } from 'next/navigation';
 
 export async function requireAdmin() {
-  const { redirect } = await import('next/navigation');
   const session = await getServerSession(authOptions);
   
   if (!session?.user) {

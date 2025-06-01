@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Heart, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WishlistButtonProps {
   productId: string;
@@ -72,24 +73,17 @@ export default function WishlistButton({
       if (response.ok) {
         const result = await response.json();
         setIsInWishlist(result.inWishlist);
-        
-        // Show success message
-        const message = result.inWishlist 
-          ? `${productName} added to wishlist!` 
-          : `${productName} removed from wishlist!`;
-        
-        // You can replace this with a toast notification
-        if (window.confirm(message)) {
-          // Simple notification - replace with proper toast
-          setTimeout(() => alert(message), 100);
+        toast(`${productName} added to wishlist`);
+        if (!result.inWishlist) {
+          toast(`${productName} removed from wishlist`);
         }
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to update wishlist');
+        toast.error(error.message || 'Failed to remove from wishlist');
       }
     } catch (error) {
       console.error('Error toggling wishlist:', error);
-      alert('Failed to update wishlist');
+      toast.error('Error removing from wishlist');
     } finally {
       setIsLoading(false);
     }
