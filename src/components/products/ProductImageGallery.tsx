@@ -38,12 +38,12 @@ export default function ProductImageGallery({ images, productName }: ProductImag
     <div className="space-y-4">
       {/* Main Image Display */}
       <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
-        <Image
+        <img
           src={images[selectedImageIndex]}
           alt={`${productName} - Image ${selectedImageIndex + 1}`}
-          fill
+          // fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          priority
+          // priority
         />
         
         {/* Navigation Arrows */}
@@ -89,10 +89,10 @@ export default function ProductImageGallery({ images, productName }: ProductImag
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <Image
+              <img
                 src={image}
                 alt={`${productName} thumbnail ${index + 1}`}
-                fill
+                // fill
                 className="object-cover"
               />
             </button>

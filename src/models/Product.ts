@@ -161,4 +161,6 @@ const productSchema = new Schema<IProduct>({
 // productSchema.index({ isFeatured: 1, isActive: 1 });
 // productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
+
+
 export default mongoose.models.Product || mongoose.model<IProduct>('Product', productSchema);

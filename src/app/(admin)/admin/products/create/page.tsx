@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { productCreateSchema, type ProductCreateInput } from '@/schemas/product';
+import { ProductCreateFormInput, productCreateFormSchema, productCreateSchema, type ProductCreateInput } from '@/schemas/product';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Plus, X } from 'lucide-react';
+import ProductImagesUploader from '@/components/cloudinary/ProductImageUploader';
+
 
 interface Category {
   _id: string;
   name: string;
-  // slug: string;
 }
 
 export default function CreateProduct() {
@@ -28,7 +29,10 @@ export default function CreateProduct() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [imageUrls, setImageUrls] = useState<string[]>(['']);
+
+  const [hasImages, setHasImages] = useState(false); // Add this state
+
+  const [imageFiles, setImageFiles] = useState<File[]>([]); // Fix: Add missing state
   const [tags, setTags] = useState<string[]>(['']);
   const router = useRouter();
 
@@ -38,20 +42,25 @@ export default function CreateProduct() {
     formState: { errors },
     setValue,
     watch,
+    control,
     reset
-  } = useForm<ProductCreateInput>({
-    resolver: zodResolver(productCreateSchema),
+  } = useForm<ProductCreateFormInput>({
+    resolver: zodResolver(productCreateFormSchema), // Use form schema
     defaultValues: {
+      name: '',
+      description: '',
       shortDescription: '',
+      price: 0,
+      category: '',
       quantity: 0,
       isActive: true,
       isFeatured: false,
       tags: [],
       variants: [],
-      images: ['']
+      images: [],
+      comparePrice: undefined,
     }
   });
-  
 
   // Fetch categories
   useEffect(() => {
@@ -67,23 +76,6 @@ export default function CreateProduct() {
 
     fetchCategories();
   }, []);
-
-  const addImageUrl = () => {
-    setImageUrls([...imageUrls, '']);
-  };
-
-  const removeImageUrl = (index: number) => {
-    const newUrls = imageUrls.filter((_, i) => i !== index);
-    setImageUrls(newUrls);
-    setValue('images', newUrls.filter(url => url.trim() !== ''));
-  };
-
-  const updateImageUrl = (index: number, value: string) => {
-    const newUrls = [...imageUrls];
-    newUrls[index] = value;
-    setImageUrls(newUrls);
-    setValue('images', newUrls.filter(url => url.trim() !== ''));
-  };
 
   const addTag = () => {
     setTags([...tags, '']);
@@ -102,42 +94,74 @@ export default function CreateProduct() {
     setValue('tags', newTags.filter(tag => tag.trim() !== ''));
   };
 
-  const onSubmit = async (data: ProductCreateInput) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+// app/admin/products/create/page.tsx - Updated onSubmit function
+const onSubmit = async (formData: ProductCreateFormInput) => {
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create product');
-      }
-
-      setSuccess('Product created successfully!');
-      reset();
-      setImageUrls(['']);
-      setTags(['']);
-      
-      // Redirect to products list after 2 seconds
-      setTimeout(() => {
-        router.push('/admin/products');
-      }, 2000);
-
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
+  try {
+    // Manual validation for images
+    if (imageFiles.length === 0) {
+      setError('At least one image is required');
       setIsLoading(false);
+      return;
     }
-  };
+
+    // Upload images
+    const uploadedImages = await Promise.all(
+      imageFiles.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/cloudinary/upload", {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Image upload failed');
+        }
+
+        const result = await response.json();
+        return result.secure_url;
+      })
+    );
+
+    // Convert form data to API data using the API schema
+    const apiData = productCreateSchema.parse({
+      ...formData,
+      images: uploadedImages,
+    });
+
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(apiData),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to create product');
+    }
+
+    setSuccess('Product created successfully!');
+    reset();
+    setImageFiles([]);
+    setTags(['']);
+    
+    setTimeout(() => {
+      router.push('/admin/products');
+    }, 2000);
+
+  } catch (error: any) {
+    console.error('Product creation error:', error); // Debug log
+    setError(error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <AdminLayout title="Create Product">
@@ -211,18 +235,24 @@ export default function CreateProduct() {
 
                   <div>
                     <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => setValue('category', value)}>
-                      <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="category"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category._id} value={category._id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {errors.category && (
                       <p className="text-sm text-red-500 mt-1">{errors.category.message}</p>
                     )}
@@ -234,41 +264,27 @@ export default function CreateProduct() {
               <Card>
                 <CardHeader>
                   <CardTitle>Product Images</CardTitle>
-                  <CardDescription>Add product images (URLs)</CardDescription>
+                  <CardDescription>
+                    Upload product images (JPG, PNG, GIF)
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={url}
-                        onChange={(e) => updateImageUrl(index, e.target.value)}
-                        placeholder="Enter image URL"
-                        className="flex-1"
-                      />
-                      {imageUrls.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeImageUrl(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addImageUrl}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Image
-                  </Button>
-                  {errors.images && (
+                <ProductImagesUploader 
+      value={imageFiles} 
+      onChange={setImageFiles}
+      onFormUpdate={(hasImgs) => {
+        setHasImages(hasImgs);
+        // Update form field to prevent validation error
+        setValue('images', hasImgs ? ['placeholder'] : []);
+      }}
+    />
+        {/* Show custom error if no images */}
+        {!hasImages && (
+      <p className="text-sm text-red-500">At least one image is required</p>
+    )}
+                  {/* {errors.images && (
                     <p className="text-sm text-red-500">{errors.images.message}</p>
-                  )}
+                  )} */}
                 </CardContent>
               </Card>
 
@@ -381,17 +397,31 @@ export default function CreateProduct() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isActive"
-                      {...register('isActive')}
+                    <Controller
+                      name="isActive"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isActive"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
                     <Label htmlFor="isActive">Active</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isFeatured"
-                      {...register('isFeatured')}
+                    <Controller
+                      name="isFeatured"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isFeatured"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
                     <Label htmlFor="isFeatured">Featured</Label>
                   </div>
@@ -402,7 +432,7 @@ export default function CreateProduct() {
               <div className="space-y-2">
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full bg-red-600 hover:bg-red-700" 
                   disabled={isLoading}
                 >
                   {isLoading ? (

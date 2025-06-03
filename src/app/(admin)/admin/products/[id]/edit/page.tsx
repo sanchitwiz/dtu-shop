@@ -1,4 +1,4 @@
-// app/admin/products/[id]/edit/page.tsx
+// app/admin/products/[id]/edit/page.tsx - Enhanced with Cloudinary
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -15,9 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Plus, X, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, X, ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-
+import { toast } from 'sonner';
 
 interface Category {
   _id: string;
@@ -35,6 +35,8 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set());
   const [tags, setTags] = useState<string[]>(['']);
   const [productId, setProductId] = useState<string>('');
   const router = useRouter();
@@ -55,9 +57,8 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     }
   });
 
-    // Watch checkbox values
-    const isActive = watch('isActive');
-    const isFeatured = watch('isFeatured');
+  const isActive = watch('isActive');
+  const isFeatured = watch('isFeatured');
 
   // Load product data and categories
   useEffect(() => {
@@ -100,24 +101,6 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
         setImageUrls(product.images.length > 0 ? product.images : ['']);
         setTags(product.tags.length > 0 ? product.tags : ['']);
 
-        // Set form values
-        setValue('name', product.name);
-        setValue('description', product.description);
-        setValue('shortDescription', product.shortDescription || '');
-        setValue('price', product.price);
-        setValue('comparePrice', product.comparePrice);
-        setValue('category', product.category._id);
-        setValue('quantity', product.quantity);
-        setValue('isActive', product.isActive);
-        setValue('isFeatured', product.isFeatured);
-
-        // Set images and tags
-        setImageUrls(product.images.length > 0 ? product.images : ['']);
-        setTags(product.tags.length > 0 ? product.tags : ['']);
-        setValue('images', product.images);
-        setValue('tags', product.tags);
-        setValue('variants', product.variants || []);
-
       } catch (error: any) {
         setError(error.message);
       } finally {
@@ -126,9 +109,62 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     };
 
     loadData();
-  // }, [params, setValue, reset]);
   }, [params, reset]);
 
+  // Image handling functions
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (JPG, PNG, GIF)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      return;
+    }
+
+    setUploadingImages(prev => new Set(prev).add(index));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/cloudinary/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Upload failed');
+      }
+
+      const data = await response.json();
+      if (!data.secure_url) {
+        throw new Error('No image URL returned from Cloudinary');
+      }
+
+      // Update image URL
+      const newUrls = [...imageUrls];
+      newUrls[index] = data.secure_url;
+      setImageUrls(newUrls);
+      setValue('images', newUrls.filter(url => url.trim() !== ''));
+      
+      toast.success('Image uploaded successfully!');
+
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message}`);
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+  };
 
   const addImageUrl = () => {
     setImageUrls([...imageUrls, '']);
@@ -147,6 +183,7 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     setValue('images', newUrls.filter(url => url.trim() !== ''));
   };
 
+  // Tag handling functions
   const addTag = () => {
     setTags([...tags, '']);
   };
@@ -162,6 +199,34 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
     newTags[index] = value;
     setTags(newTags);
     setValue('tags', newTags.filter(tag => tag.trim() !== ''));
+  };
+
+  // Delete product function
+  const handleDeleteProduct = async () => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete product');
+      }
+
+      toast.success('Product deleted successfully!');
+      router.push('/admin/products');
+
+    } catch (error: any) {
+      toast.error(`Delete failed: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSubmit = async (data: ProductUpdateInput) => {
@@ -185,14 +250,15 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
       }
 
       setSuccess('Product updated successfully!');
+      toast.success('Product updated successfully!');
       
-      // Redirect to product view after 2 seconds
       setTimeout(() => {
-        router.push(`/admin/products/${productId}`);
+        router.push(`/admin/products`);
       }, 2000);
 
     } catch (error: any) {
       setError(error.message);
+      toast.error(`Update failed: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -211,17 +277,33 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
   return (
     <AdminLayout title="Edit Product">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center space-x-4">
-          <Link href={`/admin/products/${productId}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Product
-            </Button>
-          </Link>
-          <div>
-            <h2 className="text-2xl font-bold">Edit Product</h2>
-            <p className="text-gray-600">Update product information</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link href="/admin/products">
+              <Button variant="outline" size="sm" className="border-red-600 text-red-600 hover:bg-red-50">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Products
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold">Edit Product</h2>
+              <p className="text-gray-600">Update product information</p>
+            </div>
           </div>
+
+          {/* Delete Button */}
+          <Button
+            variant="destructive"
+            onClick={handleDeleteProduct}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            Delete Product
+          </Button>
         </div>
 
         {error && (
@@ -313,30 +395,62 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
                 </CardContent>
               </Card>
 
-              {/* Images */}
+              {/* Images with Cloudinary Upload */}
               <Card>
                 <CardHeader>
                   <CardTitle>Product Images</CardTitle>
-                  <CardDescription>Update product images (URLs)</CardDescription>
+                  <CardDescription>Upload or update product images</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {imageUrls.map((url, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={url}
-                        onChange={(e) => updateImageUrl(index, e.target.value)}
-                        placeholder="Enter image URL"
-                        className="flex-1"
-                      />
-                      {imageUrls.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeImageUrl(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    <div key={index} className="space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={url}
+                          onChange={(e) => updateImageUrl(index, e.target.value)}
+                          placeholder="Enter image URL or upload file"
+                          className="flex-1"
+                        />
+                        {imageUrls.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeImageUrl(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* File Upload Option */}
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor={`file-upload-${index}`} className="cursor-pointer">
+                          <div className="flex items-center space-x-2 bg-white border border-red-600 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-50 transition-colors">
+                            <Upload className="w-3 h-3" />
+                            <span>Upload</span>
+                          </div>
+                        </Label>
+                        <input
+                          id={`file-upload-${index}`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, index)}
+                          className="hidden"
+                          disabled={uploadingImages.has(index)}
+                        />
+                        {uploadingImages.has(index) && (
+                          <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                        )}
+                      </div>
+
+                      {/* Image Preview */}
+                      {url && (
+                        <img
+                          src={url}
+                          alt={`Preview ${index}`}
+                          className="w-24 h-24 object-cover rounded border"
+                        />
                       )}
                     </div>
                   ))}
@@ -493,7 +607,6 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
                     <Label htmlFor="isFeatured">Featured Product</Label>
                   </div>
 
-                  {/* Visual feedback */}
                   <div className="text-sm text-gray-600">
                     <p>Status: {isActive ? 'Active' : 'Inactive'}</p>
                     <p>Featured: {isFeatured ? 'Yes' : 'No'}</p>
@@ -505,7 +618,7 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
               <div className="space-y-2">
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full bg-red-600 hover:bg-red-700" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -522,7 +635,7 @@ export default function ProductEditPage({ params }: ProductEditPageProps) {
                   type="button" 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => router.push(`/admin/products/${productId}`)}
+                  onClick={() => router.push('/admin/products')}
                 >
                   Cancel
                 </Button>
