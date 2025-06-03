@@ -75,9 +75,9 @@ export default function ParallaxHeroSection() {
               </h1>
               
               {/* Subtitle with Animation - Responsive */}
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-4xl font-light text-gray-200 tracking-wide animate-fade-in-up">
-                Student Marketplace
-              </h2>
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-gray-200 tracking-wide animate-fade-in-up">
+  Your One-Stop Destination for DTU Merchandise
+</h2>
               
               {/* Decorative Line - Responsive */}
               <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent mx-auto"></div>

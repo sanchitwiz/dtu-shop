@@ -62,7 +62,7 @@ export default function HeroSection() {
               
               <p className="text-lg text-gray-700 leading-relaxed max-w-xl">
                 Browse thousands of products from fellow DTU Gift Shop. From textbooks to cloths, 
-                discover great deals within your campus community.
+                discover great deals with product authenticity.
               </p>
             </div>
 
@@ -97,11 +97,11 @@ export default function HeroSection() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/auth/signup">
+              {/* <Link href="/auth/signup">
                 <Button variant="outline" className="w-full sm:w-auto border-red-600 text-red-600 hover:bg-red-50 px-8 py-3">
                   Join Community
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
 

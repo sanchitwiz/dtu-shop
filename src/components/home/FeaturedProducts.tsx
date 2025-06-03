@@ -97,7 +97,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
               Featured Products
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              Handpicked deals from your fellow students
+              Our Best Sellings Products Just For You
             </p>
           </div>
           

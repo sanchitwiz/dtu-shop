@@ -20,8 +20,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-gray-400 leading-relaxed">
-              The trusted marketplace for college students. Buy and sell with confidence 
-              within your campus community.
+              Welcome to DTU Shop, your one-stop destination for all college essentials. From textbooks to tech gadgets, we have everything you need to succeed in your academic journey.
             </p>
           </div>
 
@@ -50,7 +49,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © {currentYear} CollegeMarket. All rights reserved.
+              © {currentYear} DTU Gift Shop. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">

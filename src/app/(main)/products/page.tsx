@@ -124,7 +124,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">All Products</h1>
           <p className="text-gray-600">
-            Discover amazing products from your fellow students
+            Products from all categories. Use the filters below to narrow down your search.
           </p>
         </div>
 

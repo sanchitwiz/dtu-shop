@@ -86,7 +86,7 @@ const formatDate = (dateString: string) => {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
           <h2 className="text-2xl font-bold">Welcome back, {admin.name}!</h2>
           <p className="mt-1 opacity-90">
-            Here's your college marketplace overview for today
+            Here’s a quick overview of your store's performance and recent activity.
           </p>
         </div>
 
