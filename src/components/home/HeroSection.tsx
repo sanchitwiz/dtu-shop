@@ -14,14 +14,13 @@ export default function HeroSection() {
 
   // Product images for slideshow
   const productImages = [
-    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Shirts
-    'https://images.unsplash.com/photo-1603487742131-4160ec999306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Slippers
-    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Bags
-    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Notebooks
-    'https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Mugs
-    'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Jackets
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Keychains
-    'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Sweatshirts
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748954627/dtu-shop/tzztchhcfuclwjiikmvp.jpg', // Shirts
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748959235/dtu-shop/bua4llkzduzdjolb6ayl.jpg', // Bags
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748958771/dtu-shop/rivhw2klrkrk3vzek3vu.png', // Notebooks
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748957680/dtu-shop/yn3rfcdpyp5y40eluf7a.png', // Mugs
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748958026/dtu-shop/kenqby3dhnsgsu2pjd8a.png', // Jackets
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748957475/dtu-shop/cncchainswqpyttmcmi4.png', // Sipper
+    'https://res.cloudinary.com/dqrhi0gqf/image/upload/v1748967557/dtu-shop/e72hizo6apbc7avcaza9.jpg' // Sweatshirts
   ];
   
   
@@ -115,13 +114,13 @@ export default function HeroSection() {
                 <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 px-4 py-2 border border-gray-300">
                 <span className="text-sm font-medium text-gray-800">
                   {currentImageIndex === 0 && 'Shirts & T-Shirts'}
-                  {currentImageIndex === 1 && 'Slippers & Footwear'}
-                  {currentImageIndex === 2 && 'Bags & Backpacks'}
-                  {currentImageIndex === 3 && 'Notebooks & Stationery'}
-                  {currentImageIndex === 4 && 'Mugs & Drinkware'}
-                  {currentImageIndex === 5 && 'Jackets & Outerwear'}
-                  {currentImageIndex === 6 && 'Keychains & Accessories'}
-                  {currentImageIndex === 7 && 'Sweatshirts & Hoodies'}
+                  {currentImageIndex === 1 && 'Bags & Backpacks'}
+                  {currentImageIndex === 2 && 'Notebooks & Stationery'}
+                  {currentImageIndex === 3 && 'Mugs & Drinkware'}
+                  {currentImageIndex === 4 && 'Jackets & Outerwear'}
+                  {currentImageIndex === 5 && 'Sipper and Bottles'}
+                  {currentImageIndex === 6 && 'Sweatshirts & Hoodies'}
+
                 </span>
 
                 </div>
